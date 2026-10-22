@@ -1,0 +1,25 @@
+# Ambiente de desenvolvimento local — apenas o banco de dados.
+# A API roda localmente (dotnet run) apontando para este Postgres.
+# Os Dockerfiles de api/web serão adicionados numa etapa posterior.
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: freighthub-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-freighthub}
+      POSTGRES_USER: ${POSTGRES_USER:-freighthub}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-freighthub_dev_password}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-freighthub} -d ${POSTGRES_DB:-freighthub}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:

@@ -1,0 +1,10 @@
+# Variáveis de ambiente locais (segredos)
+.env
+
+# Artefatos de build .NET
+**/bin/
+**/obj/
+
+# IDE
+.idea/
+.vs/

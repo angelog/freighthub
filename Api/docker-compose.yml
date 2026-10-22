@@ -1,0 +1,43 @@
+# Sobe o backend isolado (API + Postgres) — para desenvolver/testar só a API.
+# O docker-compose da raiz sobe tudo junto (Api + Web).
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: freighthub-api-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-freighthub}
+      POSTGRES_USER: ${POSTGRES_USER:-freighthub}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-freighthub_dev_password}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-freighthub} -d ${POSTGRES_DB:-freighthub}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ./Api
+      dockerfile: Dockerfile
+    container_name: freighthub-api
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-freighthub};Username=${POSTGRES_USER:-freighthub};Password=${POSTGRES_PASSWORD:-freighthub_dev_password}"
+      Credentials__EncryptionKey: ${Credentials__EncryptionKey:-}
+      Jwt__SigningKey: ${Jwt__SigningKey:-}
+      Auth__InitialAdmin__Email: ${Auth__InitialAdmin__Email:-}
+      Auth__InitialAdmin__Password: ${Auth__InitialAdmin__Password:-}
+    ports:
+      - "${API_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
